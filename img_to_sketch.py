@@ -1,47 +1,31 @@
-
-# Python program to Convert Image into sketch
- 
- 
-# import all the required modules
+import gradio as gr
 import numpy as np
-import imageio
 import scipy.ndimage
-import cv2
- 
- 
-# take image input and assign variable to it
-img_loation = "hk3.jpeg"
- 
- 
-# function to convert image into sketch
-def rgbtogrey(rgb):
-    return np.dot(rgb[..., :3], [0.2989, 0.5870, .1140])
- 
- 
-def dodge(front, back):
- 
-    # if image is greater than 255 (which is not possible) it will convert it to 255
-    final_sketch = front*255/(255-back)
-    final_sketch[final_sketch > 255] = 255
-    final_sketch[back == 255] = 255
- 
-    # to convert any suitable existing column to categorical type we will use aspect function
-    # and uint8 is for 8-bit signed integer
-    return final_sketch.astype('uint8')
- 
- 
-ss = imageio.imread(img_loation)
-gray = rgbtogrey(ss)
- 
-i = 255-gray
- 
- 
-# to convert into a blur image
-blur = scipy.ndimage.filters.gaussian_filter(i, sigma=13)
- 
- 
-# calling the function
-r = dodge(blur, gray)
- 
- 
-cv2.imwrite('hk3_new.png', r)
+
+def image_to_sketch(image):
+    # Convert RGB to grayscale
+    def rgbtogrey(rgb):
+        return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
+    
+    # Dodge function
+    def dodge(front, back):
+        final_sketch = front*255/(255-back)
+        final_sketch[final_sketch > 255] = 255
+        final_sketch[back == 255] = 255
+        return final_sketch.astype('uint8')
+    
+    gray = rgbtogrey(image)
+    i = 255 - gray
+    blur = scipy.ndimage.gaussian_filter(i, sigma=13)
+    r = dodge(blur, gray)
+    return r
+
+demo = gr.Interface(
+    fn=image_to_sketch,
+    inputs=gr.Image(type="numpy"),   # User uploads image here
+    outputs=gr.Image(type="numpy"),
+    title="Image to Sketch Converter 🎨",
+    description="Upload an image and get its sketch instantly!"
+)
+
+demo.launch()
